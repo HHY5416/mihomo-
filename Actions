@@ -1,0 +1,22 @@
+# .github/workflows/update-sub.yml
+name: 每日更新订阅
+on:
+  schedule:
+    - cron: '0 0 * * *'  # UTC 0:00 = 北京 8:00
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 下载 subscription.yaml
+        run: |
+          curl -L -o Mihomo/subscription.yaml "https://api.sublink.dev/?target=clash&url=https://sfeed.cc/AiYDJwhAmMmWg4enmR-8dA?type=clash&protocol=ss2022&use=domestic&rule=default&filename=subscription.yaml"
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add Mihomo/subscription.yaml
+          git commit -m "Auto: 更新订阅 $(date +'%Y-%m-%d %H:%M')" || echo "无变化"
+          git push
