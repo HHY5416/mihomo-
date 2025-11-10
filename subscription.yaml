@@ -1,0 +1,238 @@
+# subscription.yaml —— 仅订阅内容（订阅转换器输出）
+
+### 订阅基础配置
+NodeParam: &NodeParam {type: http, 间隔: 86400, health-check: {enable: true, url: 'http://connectivitycheck.platform.hicloud.com/generate_204', 间隔: 300}}
+
+# 订阅合集
+代理提供商:
+  节点 1:
+    url: '替换订阅链接 1'
+    <<: *NodeParam
+    路径: './proxy_provider/providers-1.yaml'
+    覆盖:
+      附加前缀: [A]
+  节点 2:
+    url: '替换订阅链接 2'
+    <<: *NodeParam
+    路径: './proxy_provider/providers-2.yaml'
+    覆盖:
+      附加前缀: [B]
+
+# 节点筛选
+FilterHK: &FilterHK '^(?=.*((?i)HK|香港|\b(HK|Hong)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|过期|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterTW: &FilterTW '^(?=.*((?i)TW|台湾|\b(TW|Tai|台湾)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|晚期|过渡|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterJP: &FilterJP '^(?=.*((?i)JP|日本|川日|东京|大阪|泉日|埼玉|\b(JP|Japan)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|晚期|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterKR: &FilterKR '^(?=.*((?i)KR|韩国|韩国|首尔|\b(KR|韩国)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|同期|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterSG: &FilterSG '^(?=.*((?i)SG|新加坡|狮|\b(SG|新加坡)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|过渡|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterUS: &FilterUS '^(?=.*((?i)US|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|\b(US|美国 states)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|过期|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterUK: &FilterUK '^(?=.*((?i)UK|英国|伦敦|\b(UK|英国)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余|过渡|时间|有效|网址|禁止|邮箱|发布|客服|订阅|节点)).*$'
+FilterFR: &FilterFR '^(?=.*((?i)FR|法国|\b(FR|法国)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余||时间|有效|网址禁止||邮箱|发布|客服|订阅|节点)).*$'
+FilterDE: &FilterDE '^(?=.*((?i)DE|德国|\b(DE|德国)(\d+)?\b))(?!.*((?i)回国|校园|网站|地址|剩余||时间|有效|网址禁止||邮箱|发布|客服|订阅|节点)).*$'
+FilterOthers: &FilterOthers '^(?!.*(HK|香港|香港|TW|台湾|湾|JP|日本||SG|新加坡|狮城|US|美国|美国国家|美国|美国|DE|德国|德国|UK|英国|英国|英国|KR|韩国|韩国|韩国|FR|法国|法国))。*$'
+过滤全部: &过滤全部 '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|逼|机场|下一步|版本|官址|备用|过渡|已用||联系邮箱|工单|再次|通知|倒卖|阻止国内||地址|频道|无法说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TOTAL|EXPIRE|EMAIL|面板|频道|作者)\b|(\d{4}-\d{2}-\d{2}|\d+G))))。*$'
+
+### 策略组基础配置
+选择: &选择 {type: select, url: 'http://connectivitycheck.platform.hicloud.com/generate_204', disable-udp: false, hidden: false, include-all: true}
+UrlTest: &UrlTest {type: url-test, url: 'http://connectivitycheck.platform.hicloud.com/generate_204', interval: 300, lazy: true, tolerance: 50, timeout: 2000, disable-udp: false, max-failed-times: 3, hidden: true, include-all: true}
+FallBack: &FallBack {type: fallback, url: 'http://connectivitycheck.platform.hicloud.com/generate_204', interval: 300, lazy: true, timeout: 2000, disable-udp: false, max-failed-times: 3, hidden: true, include-all: true}
+LoadBalance: &LoadBalance {type: load-balance, url: 'http://connectivitycheck.platform.hicloud.com/generate_204', interval: 300, lazy: true, disable-udp: false, strategy: consistent-hashing, timeout: 2000, max-failed-times: 3, hidden: true, include-all: true}
+
+# 策略组
+代理组:
+  - {name: 节点选择, type: select, proxies: [智能选择,手动选择, DIRECT], url: http://connectivitycheck.platform.hicloud.com/generate_204, icon: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Static.png}
+  - {名称: 手动选择, 类型: 选择, 代理: [HK - 选择手动, JP - 手动选择, KR - 手动选择, SG - 手动选择, US - 手动选择, GB - 手动选择, FR - 手动选择, DE - 手动选择, TW - 手动选择, 其他 - 手动选择], 网址: http://connectivitycheck.platform.hicloud.com/generate_204, 图标: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Cylink.png}
+  - {名称: 智能选择, 类型: 选择, 代理: [HK - 自动, JP - 自动, KR - 自动, SG - 自动, US - 自动, GB - 自动, FR - 自动, DE - 自动, TW - Auto], 网址: http://connectivitycheck.platform.hicloud.com/generate_204, 图标: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Urltest.png}
+  - {name: 电报信息, type: select, 代理: [节点选择, HK - Auto, JP - Auto, SG - Auto, US - Auto], icon: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Telegram.png}
+  - {name: AIGC, type: select, proxies: [US - Auto, 节点选择, HK - Auto, JP - Auto, SG - Auto], icon: https://raw.githubusercontent.com/Orz-3/mini/master/Color/OpenAI.png}
+  - {name: 苹果服务, type: select, 代理: [DIRECT, 节点选择, HK - Auto, US - Auto], icon: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Apple.png}
+  - {name: 微软服务, type: select, proxies: [DIRECT, 节点选择, HK - Auto, US - Auto], icon: https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png}
+  - {name: HK - Auto, type: select, proxies: [HK - 自动选择, HK - 自动回退, HK - 负载均衡]}
+  - {name: JP - Auto, type: select, proxies: [JP - 自动选择, JP - 自动回退, JP - 负载均衡]}
+  - {name: KR - Auto, type: select, proxies: [KR - 自动选择, KR - 自动回退, KR - 负载均衡]}
+  - {name: SG - Auto, type: select, proxies: [SG - 自动选择, SG - 自动回退, SG - 负载均衡]}
+  - {name: US - Auto, type: select, proxies: [US - 自动选择, US - 自动回退, US - 负载均衡]}
+  - {name: GB - Auto, type: select, proxies: [GB - 自动选择, GB - 自动回退, GB - 负载均衡]}
+  - {name: FR - Auto, type: select, proxies: [FR - 自动选择, FR - 自动回退, FR - 负载均衡]}
+  - {name: DE - Auto, type: select, proxies: [DE - 自动选择, DE - 自动回退, DE - 负载均衡]}
+  - {name: TW - Auto, type: select, proxies: [TW - 自动选择, TW - 自动回退, TW - 负载均衡]}
+  - {name: HK - 自动选择, <<: *UrlTest, 过滤器: *FilterHK}
+  - {名称: JP - 自动选择, <<: *UrlTest, 过滤器: *FilterJP}
+  - {名称: KR - 自动选择, <<: *UrlTest, 过滤器: *FilterKR}
+  - {名称: SG - 自动选择, <<: *UrlTest, 过滤器: *FilterSG}
+  - {名称: US - 自动选择, <<: *UrlTest, 过滤器: *FilterUS}
+  - {名称: GB - 自动选择, <<: *UrlTest, 过滤器: *FilterUK}
+  - {名称: FR - 自动选择, <<: *UrlTest, 过滤器: *FilterFR}
+  - {名称: DE - 自动选择, <<: *UrlTest, 过滤器: *FilterDE}
+  - {name: TW - 自动选择, <<: *UrlTest, filter: *FilterTW}
+  - {name: HK - 自动回退, <<: *FallBack, 过滤器: *FilterHK}
+  - {name: JP - 自动回退, <<: *FallBack, 过滤器: *FilterJP}
+  - {name: KR - 自动回退, <<: *FallBack, 过滤器: *FilterKR}
+  - {name: SG - 自动回退, <<: *FallBack, 过滤器: *FilterSG}
+  - {name: US - 自动回退, <<: *FallBack, 过滤器: *FilterUS}
+  - {name: GB - 自动回退, <<: *FallBack, 过滤器: *FilterUK}
+  - {name: FR - 自动回退, <<: *FallBack, 过滤器: *FilterFR}
+  - {name: DE - 自动回退, <<: *FallBack, 过滤器: *FilterDE}
+  - {name: TW - 自动回退, <<: *FallBack, filter: *FilterTW}
+  - {name: HK - 负载均衡, <<: *LoadBalance, filter: *FilterHK}
+  - {名称: JP - 负载均衡, <<: *LoadBalance, 过滤器: *FilterJP}
+  - {名称: KR - 负载均衡, <<: *LoadBalance, 过滤器: *FilterKR}
+  - {名称: SG - 负载均衡, <<: *LoadBalance, 过滤器: *FilterSG}
+  - {名称: US - 负载均衡, <<: *LoadBalance, 过滤器: *FilterUS}
+  - {名称: GB - 负载均衡, <<: *LoadBalance, 过滤器: *FilterUK}
+  - {名称: FR - 负载均衡, <<: *LoadBalance, 过滤器: *FilterFR}
+  - {名称: DE - 负载均衡, <<: *LoadBalance, 过滤器: *FilterDE}
+  - {name: TW - 负载均衡, <<: *LoadBalance, filter: *FilterTW}
+  - {名称: HK - 手动选择, <<: *选择, 过滤器: *FilterHK}
+  - {名称: JP - 手动选择, <<: *选择, 过滤器: *FilterJP}
+  - {名称: KR - 手动选择, <<: *选择, 过滤器: *FilterKR}
+  - {名称: SG - 手动选择, <<: *选择, 过滤器: *FilterSG}
+  - {名称: US - 手动选择, <<: *选择, 过滤器: *FilterUS}
+  - {名称: GB - 手动选择, <<: *选择, 过滤器: *FilterUK}
+  - {名称: FR - 手动选择, <<: *选择, 过滤器: *FilterFR}
+  - {名称: DE - 手动选择, <<: *选择, 过滤器: *FilterDE}
+  - {名称: TW - 手动选择, <<: *选择, 过滤器: *FilterTW}
+  - {name: 其他 - 手动选择, <<: *选择, 过滤: *FilterOthers}
+  - {名称: AllIn - 手动选择, <<: *选择, 过滤器: *过滤全部}
+  - {name: AllIn - 自动选择, <<: *UrlTest, filter: *过滤全部}
+
+### 规则配置
+RuleSet_classical: &RuleSet_classical {type: http, behavior: classical, interval: 43200, format: text, proxy: 节点选择}
+RuleSet_domain: &RuleSet_domain {type: http, Behaviour: Domain, Interval: 43200, format: text, proxy: 节点选择}
+RuleSet_ipcidr: &RuleSet_ipcidr {类型: http, 行为: ipcidr, 间隔: 43200, 格式: 文本, 代理: 节点选择}
+
+# 订阅规则
+规则提供程序:
+  reject_non_ip_no_drop:
+    <<: *RuleSet_classical
+    url: 'https://ruleset.skk.moe/Clash/non_ip/reject-no-drop.txt'
+    路径: './rule_set/sukkaw_ruleset/reject_non_ip_no_drop.txt'
+  reject_non_ip_drop:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/reject-drop.txt
+    路径: ./rule_set/sukkaw_ruleset/reject_non_ip_drop.txt
+  reject_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/reject.txt
+    路径: ./rule_set/sukkaw_ruleset/reject_non_ip.txt
+  reject_domainset:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/domainset/reject.txt
+    路径: ./rule_set/sukkaw_ruleset/reject_domainset.txt
+  reject_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/ip/reject.txt
+    路径: ./rule_set/sukkaw_ruleset/reject_ip.txt
+  cdn_domainset:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/domainset/cdn.txt
+    路径: ./rule_set/sukkaw_ruleset/cdn_domainset.txt
+  cdn_non_ip:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/non_ip/cdn.txt
+    path: ./rule_set/sukkaw_ruleset/cdn_non_ip.txt
+  stream_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/stream.txt
+    路径: ./rule_set/sukkaw_ruleset/stream_non_ip.txt
+  stream_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/ip/stream.txt
+    路径: ./rule_set/sukkaw_ruleset/stream_ip.txt
+  ai_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/ai.txt
+    路径: ./rule_set/sukkaw_ruleset/ai_non_ip.txt
+  telegram_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/telegram.txt
+    路径: ./rule_set/sukkaw_ruleset/telegram_non_ip.txt
+  telegram_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/ip/telegram.txt
+    路径: ./rule_set/sukkaw_ruleset/telegram_ip.txt
+  apple_cdn:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/domainset/apple_cdn.txt
+    路径: ./rule_set/sukkaw_ruleset/apple_cdn.txt
+  apple_services:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/apple_services.txt
+    路径: ./rule_set/sukkaw_ruleset/apple_services.txt
+  apple_cn_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/apple_cn.txt
+    路径: ./rule_set/sukkaw_ruleset/apple_cn_non_ip.txt
+  microsoft_cdn_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt
+    路径: ./rule_set/sukkaw_ruleset/microsoft_cdn_non_ip.txt
+  microsoft_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/microsoft.txt
+    路径: ./rule_set/sukkaw_ruleset/microsoft_non_ip.txt
+  下载域集:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/domainset/download.txt
+    路径: ./rule_set/sukkaw_ruleset/download_domainset.txt
+  download_non_ip:
+    <<: *规则集域
+    网址: https://ruleset.skk.moe/Clash/non_ip/download.txt
+    路径: ./rule_set/sukkaw_ruleset/download_non_ip.txt
+  lan_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/lan.txt
+    路径: ./rule_set/sukkaw_ruleset/lan_non_ip.txt
+  lan_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/ip/lan.txt
+    路径: ./rule_set/sukkaw_ruleset/lan_ip.txt
+  domestic_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/domestic.txt
+    路径: ./rule_set/sukkaw_ruleset/domestic_non_ip.txt
+  direct_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/direct.txt
+    路径: ./rule_set/sukkaw_ruleset/direct_non_ip.txt
+  global_non_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/non_ip/global.txt
+    路径: ./rule_set/sukkaw_ruleset/global_non_ip.txt
+  domestic_ip:
+    <<: *RuleSet_classical
+    网址: https://ruleset.skk.moe/Clash/ip/domestic.txt
+    路径: ./rule_set/sukkaw_ruleset/domestic_ip.txt
+  china_ip:
+    <<: *RuleSet_ipcidr
+    网址: https://ruleset.skk.moe/Clash/ip/china_ip.txt
+    路径: ./rule_set/sukkaw_ruleset/china_ip.txt
+
+# 分流规则
+规则:
+  - 规则集, 拒绝非 IP 地址, 拒绝
+  - 规则集, reject_domainset, 拒绝
+  - 规则集, 拒绝非 IP 丢弃, 拒绝丢弃
+  - 规则集, reject_non_ip_no_drop, 拒绝
+  - RULE-SET, cdn_domainset, 节点选择
+  - RULE-SET, cdn_non_ip, 节点选择
+  - 规则集, stream_non_ip, US - 自动选择
+  - 规则集, telegram_non_ip, 电报信息
+  - 规则集, apple_cdn, 直接
+  - RULE-SET, download_domainset, 节点选择
+  - RULE-SET, download_non_ip, 节点选择
+  - 规则集, microsoft_cdn_non_ip, 直接
+  - 规则集, apple_cn_non_ip, 直接
+  - 规则集, apple_services, 苹果服务
+  - 规则集, microsoft_non_ip, 微软服务
+  - 规则集, ai_non_ip, AIGC
+  - RULE-SET, global_non_ip, 节点选择
+  - 规则集, 国内非 IP, 直接
+  - 规则集, direct_non_ip, DIRECT
+  - RULE-SET, lan_non_ip, DIRECT
+  - 规则集, reject_ip, 拒绝
+  - 规则集, telegram_ip, 电报信息
+  - 规则集, stream_ip, US - 自动选择
+  - 规则集, lan_ip, 直接
+  - 规则集, 国内 IP, 直接
+  - 规则集, 中国 IP, 直接
+  - MATCH, 节点选择
